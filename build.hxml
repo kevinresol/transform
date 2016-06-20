@@ -1,0 +1,6 @@
+-cp tests
+-main RunTests
+-lib travix
+-lib transform
+-js bin/node/tests.js
+-dce full
