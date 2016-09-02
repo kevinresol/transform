@@ -15,6 +15,11 @@ typedef State = {
     taxPercent:Int,
   },
 }
+
+typedef Props = {
+  something:String,
+}
+
 class RunTests extends TestCase {
 
   static function main() {
@@ -23,7 +28,7 @@ class RunTests extends TestCase {
     travix.Logger.exit(runner.run() ? 0 : 500); // make sure we exit properly, which is necessary on some targets, e.g. flash & (phantom)js
   }
   
-  function testTransform() {
+  function testInputOfSingleArg() {
     var subtotalCount = 0;
     var taxCount = 0;
     var totalCount = 0;
@@ -93,6 +98,87 @@ class RunTests extends TestCase {
     assertEquals(3.15, subtotal(exampleState));
     assertEquals(0.315, tax(exampleState));
     assertEquals(3465, Math.round(total(exampleState).total*1000));
+    assertEquals(2, subtotalCount);
+    assertEquals(3, taxCount);
+    assertEquals(3, totalCount);
+  }
+  
+  
+  
+  function testInputOfMultiArgs() {
+    var subtotalCount = 0;
+    var taxCount = 0;
+    var totalCount = 0;
+    
+    function shopItems(state:State, props:Props) return state.shop.items;
+    function taxPercent(state:State, props:Props) return state.shop.taxPercent;
+    var subtotal = Transformer.create(shopItems, function(items:Array<Item>) {
+      subtotalCount ++;
+      return items.fold(function(item, acc) return acc + item.value, 0);
+    });
+    var tax = Transformer.create([subtotal, taxPercent], function(subtotal:Float, taxPercent:Int) {
+      taxCount ++;
+      return subtotal * taxPercent / 100;
+    });
+    var total = Transformer.create([subtotal, tax], function(subtotal:Float, tax:Float) {
+      totalCount ++;
+      return {total: subtotal + tax};
+    });
+    
+    var exampleState = {
+      shop: {
+        taxPercent: 8,
+        items: [
+          {name: 'apple', value: 1.2},
+          {name: 'orange', value: 0.95},
+        ]
+      }
+    }
+    
+    var exampleProps = {
+      something: 'fun',
+    }
+    
+    assertEquals(2.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.172, tax(exampleState, exampleProps));
+    assertEquals(2.322, total(exampleState, exampleProps).total);
+    assertEquals(1, subtotalCount);
+    assertEquals(1, taxCount);
+    assertEquals(1, totalCount);
+    
+    assertEquals(2.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.172, tax(exampleState, exampleProps));
+    assertEquals(2.322, total(exampleState, exampleProps).total);
+    assertEquals(1, subtotalCount);
+    assertEquals(1, taxCount);
+    assertEquals(1, totalCount);
+    
+    exampleState.shop.taxPercent = 10;
+    assertEquals(2.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.215, tax(exampleState, exampleProps));
+    assertEquals(2365, Math.round(total(exampleState, exampleProps).total*1000));
+    assertEquals(1, subtotalCount);
+    assertEquals(2, taxCount);
+    assertEquals(2, totalCount);
+    
+    assertEquals(2.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.215, tax(exampleState, exampleProps));
+    assertEquals(2365, Math.round(total(exampleState, exampleProps).total*1000));
+    assertEquals(1, subtotalCount);
+    assertEquals(2, taxCount);
+    assertEquals(2, totalCount);
+    
+    exampleState.shop.items = exampleState.shop.items.concat([{name: 'pear', value: 1}]);
+    assertEquals(3.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.315, tax(exampleState, exampleProps));
+    assertEquals(3465, Math.round(total(exampleState, exampleProps).total*1000));
+    assertEquals(2, subtotalCount);
+    assertEquals(3, taxCount);
+    assertEquals(3, totalCount);
+    
+    assertEquals(3.15, subtotal(exampleState, exampleProps));
+    assertEquals(0.315, tax(exampleState, exampleProps));
+    assertEquals(3465, Math.round(total(exampleState, exampleProps).total*1000));
     assertEquals(2, subtotalCount);
     assertEquals(3, taxCount);
     assertEquals(3, totalCount);

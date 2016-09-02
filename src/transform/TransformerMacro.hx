@@ -49,7 +49,6 @@ class TransformerMacro {
 			}
 		}
 		
-		trace(input.toString());
 		switch input.expr {
 			case EArrayDecl(values):
 				for(i in 0...values.length) {
@@ -59,9 +58,10 @@ class TransformerMacro {
 						inputArgs = extractArgs(inputType);
 					} else {
 						var args = extractArgs(type);
+						if(args.length != inputArgs.length) Context.error('Different number of arguments', values[i].pos);
 						for(i in 0...args.length) {
 							if(!Context.unify(args[i].type.toType().sure(), inputArgs[i].type.toType().sure()))
-								throw 'Incompatible argument type';
+								Context.error('Incompatible argument type', values[i].pos);
 						}
 					}
 					handle(i, values[i]);
